@@ -1,9 +1,11 @@
 package com.india.deva;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.Toolbar;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.KeyEvent;
@@ -18,17 +20,24 @@ import com.tapadoo.alerter.Alerter;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
+import android.util.TimingLogger;
+import android.util.Log;
+
+
 public class MainActivity extends AbstractProjectBaseActivity implements SwipeRefreshLayout.OnRefreshListener{
-    private String postUrl = "https://multifixtechnosolution.com/findoctor/";
+    private String postUrl = "https://juejin.im/";
     private WebView webview;
     boolean doubleBackToExitPressedOnce = false;
     private SwipeRefreshLayout mSwipeRefreshLayout;
+    private TimingLogger timeLogger;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d("Test", String.valueOf(System.currentTimeMillis()));
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.d("Test onCreate", String.valueOf(System.currentTimeMillis()));
         mSwipeRefreshLayout = findViewById(R.id.swipeContainer);
         mSwipeRefreshLayout.setOnRefreshListener(this);
         mSwipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary,
@@ -42,6 +51,8 @@ public class MainActivity extends AbstractProjectBaseActivity implements SwipeRe
 
     private void checkInternetConnection() {
         if (ConnectivityReceiver.isConnected()) {
+            timeLogger = new TimingLogger(postUrl, "loadWebView");
+
             loadWebView();
         } else {
             showAlertWithOnClick();
@@ -72,10 +83,12 @@ public class MainActivity extends AbstractProjectBaseActivity implements SwipeRe
                 .show();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void loadWebView() {
         webview = (WebView) findViewById(R.id.webView);
 
         webview.setWebViewClient(new MyWebViewClient());
+        WebView.setWebContentsDebuggingEnabled(true);
         webview.getSettings().setJavaScriptEnabled(true);
         webview.getSettings().setDomStorageEnabled(true);
         webview.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
@@ -110,12 +123,17 @@ public class MainActivity extends AbstractProjectBaseActivity implements SwipeRe
 
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            timeLogger.addSplit("onPageStarted");
+            Log.d("Test onPageStarted", String.valueOf(System.currentTimeMillis()));
             super.onPageStarted(view, url, favicon);
             ProgressDialog.getInstance().showLoading(MainActivity.this);
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
+            timeLogger.addSplit("onPageFinished");
+            timeLogger.dumpToLog();
+            Log.d("Test onPageFinished", String.valueOf(System.currentTimeMillis()));
             super.onPageFinished(view, url);
             ProgressDialog.getInstance().dismiss();
         }
